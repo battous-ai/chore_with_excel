@@ -192,21 +192,40 @@ def convert_to_pdf_libreoffice(input_file):
             print(f"LibreOffice not found at {libreoffice_path}")
             return False
         
-        # Construct the LibreOffice command with specific PDF export options
-        cmd = [
+        # First convert to ODT format which often preserves formatting better
+        cmd_to_odt = [
             libreoffice_path,
             '--headless',
             '--convert-to',
-            'pdf:writer_pdf_Export:{"SelectPdfVersion":{"type":"long","value":"1"},"ExportFormFields":{"type":"boolean","value":"false"},"ExportBookmarks":{"type":"boolean","value":"false"},"ExportNotes":{"type":"boolean","value":"false"},"ViewPDFAfterExport":{"type":"boolean","value":"false"},"ExportLinksRelativeFsys":{"type":"boolean","value":"true"},"ConvertOOoTargets":{"type":"boolean","value":"false"},"ExportPageOverwrite":{"type":"boolean","value":"false"},"UseTaggedPDF":{"type":"boolean","value":"true"},"SinglePageSheets":{"type":"boolean","value":"false"},"Compression":{"type":"long","value":"1"},"Quality":{"type":"long","value":"100"},"ReduceImageResolution":{"type":"boolean","value":"false"},"EmbedStandardFonts":{"type":"boolean","value":"true"},"ExportBookmarksToPDFDestination":{"type":"boolean","value":"false"},"PDFViewSelection":{"type":"long","value":"0"}}',
+            'odt',
             '--outdir', output_dir,
             input_file_abs
         ]
         
-        # Run the conversion
-        process = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        process = subprocess.run(cmd_to_odt, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if process.returncode != 0:
+            print(f"LibreOffice ODT conversion error: {process.stderr}")
+            return False
+            
+        # Now convert ODT to PDF with specific settings
+        odt_file = input_file_abs.rsplit('.', 1)[0] + '.odt'
+        cmd_to_pdf = [
+            libreoffice_path,
+            '--headless',
+            '--convert-to',
+            'pdf:draw_pdf_Export:{"IsSkipEmptyPages":{"type":"boolean","value":"false"},"Quality":{"type":"long","value":"100"},"ReduceImageResolution":{"type":"boolean","value":"false"},"UseTaggedPDF":{"type":"boolean","value":"true"},"SelectPdfVersion":{"type":"long","value":"1"},"ExportBookmarks":{"type":"boolean","value":"false"}}',
+            '--outdir', output_dir,
+            odt_file
+        ]
+        
+        process = subprocess.run(cmd_to_pdf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        # Clean up the intermediate ODT file
+        if os.path.exists(odt_file):
+            os.remove(odt_file)
         
         if process.returncode != 0:
-            print(f"LibreOffice conversion error: {process.stderr}")
+            print(f"LibreOffice PDF conversion error: {process.stderr}")
             return False
             
         output_file = input_file_abs.rsplit('.', 1)[0] + '.pdf'
@@ -221,22 +240,51 @@ def convert_to_pdf_libreoffice(input_file):
         print(f"Error converting {input_file}: {str(e)}")
         return False
 
-converted = False
-# convert all doc/docx files to pdf
+# converted = False
+# # convert all doc/docx files to pdf
+# for subdir in subdirs:
+#     if not os.path.isdir(os.path.join(root_path, subdir)):
+#         print(f"Not a directory: {subdir}")
+#         continue
+#     for file in os.listdir(os.path.join(root_path, subdir)):
+#         if file.endswith(('.doc', '.docx')):
+#             converted = True
+#             file_path = os.path.join(root_path, subdir, file)
+#             print(f"Converting {file} to pdf")
+#             if convert_to_pdf_libreoffice(file_path):
+#                 print(f"Successfully converted {file} to pdf")
+#             else:
+#                 print(f"Failed to convert {file}")
+#                 # Add a longer delay between files if there was an error
+#                 subprocess.run(['sleep', '3'])
+#     # if converted:
+#     #     break
+
+# change the name of the pdf to the subdir name
+# for subdir in subdirs:
+#     if not os.path.isdir(os.path.join(root_path, subdir)):
+#         print(f"Not a directory: {subdir}")
+#         continue
+#     # if there're more than one pdf, log error and continue
+#     pdf_files = [f for f in os.listdir(os.path.join(root_path, subdir)) if f.endswith('.pdf')]
+#     if len(pdf_files) > 1:
+#         print(f"More than one pdf in {subdir}")
+#         continue
+#     elif len(pdf_files) == 0:
+#         # print(f"No pdf in {subdir}")
+#         continue
+#     else:
+#         pass
+#         # shutil.move(os.path.join(root_path, subdir, pdf_files[0]), os.path.join(root_path, subdir, subdir + '.pdf'))
+#         # print(f"Renamed {pdf_files[0]} to {subdir + '.pdf'}")
+
+# move all doc/docx files to the 附件 folder
 for subdir in subdirs:
     if not os.path.isdir(os.path.join(root_path, subdir)):
         print(f"Not a directory: {subdir}")
         continue
+    os.makedirs(os.path.join(root_path, subdir, '附件'), exist_ok=True)
     for file in os.listdir(os.path.join(root_path, subdir)):
         if file.endswith(('.doc', '.docx')):
-            converted = True
-            file_path = os.path.join(root_path, subdir, file)
-            print(f"Converting {file} to pdf")
-            if convert_to_pdf_libreoffice(file_path):
-                print(f"Successfully converted {file} to pdf")
-            else:
-                print(f"Failed to convert {file}")
-                # Add a longer delay between files if there was an error
-                subprocess.run(['sleep', '3'])
-    # if converted:
-    #     break
+            shutil.move(os.path.join(root_path, subdir, file), os.path.join(root_path, subdir, '附件', file))
+            print(f"Moved {file} to {os.path.join(root_path, subdir, '附件', file)}")
