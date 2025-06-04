@@ -4,51 +4,51 @@ import shutil
 import subprocess
 
 
-column_g = pd.read_excel('废止制度目录06032044.xls', usecols="G")
+column_g = pd.read_excel('/Users/ypfeng/Downloads/废止制度目录06041348.xls', usecols="G")
 # Now it's numpy array, nice
 # Squeeze to 1D array
 # The real policy name we want
 policy = column_g[1:].values.squeeze()
 
-column_l = pd.read_excel('废止制度目录06032044.xls', usecols="L")
-index = column_l[1:].values.squeeze()
+# column_l = pd.read_excel('废止制度目录06032044.xls', usecols="L")
+# index = column_l[1:].values.squeeze()
 
-index_to_policy = {}
+# index_to_policy = {}
 
-for i in range(len(policy)):
-    index_to_policy[index[i]] = policy[i]
+# for i in range(len(policy)):
+#     index_to_policy[index[i]] = policy[i]
 
-root_path = "/Users/yupufeng/OneDrive/张亚的twodrive/废止制度"
-subdirs = os.listdir(root_path)
+# root_path = "/Users/yupufeng/OneDrive/张亚的twodrive/废止制度"
+# subdirs = os.listdir(root_path)
 
-# find all unmatched subdirs
-unmatched_subdirs = []
-# old name -> new name
-matched_subdirs = {}
-found_policy = []
-for subdir in subdirs:
-    if not os.path.isdir(os.path.join(root_path, subdir)):
-        print(f"Not a directory: {subdir}")
-        continue
-    matched = False
-    for k, v in index_to_policy.items():
-        if k in subdir:
-            matched = True
-            matched_subdirs[subdir] = v
-            found_policy.append(v)
-            break
-    if not matched:
-        unmatched_subdirs.append(subdir)
+# # find all unmatched subdirs
+# unmatched_subdirs = []
+# # old name -> new name
+# matched_subdirs = {}
+# found_policy = []
+# for subdir in subdirs:
+#     if not os.path.isdir(os.path.join(root_path, subdir)):
+#         print(f"Not a directory: {subdir}")
+#         continue
+#     matched = False
+#     for k, v in index_to_policy.items():
+#         if k in subdir:
+#             matched = True
+#             matched_subdirs[subdir] = v
+#             found_policy.append(v)
+#             break
+#     if not matched:
+#         unmatched_subdirs.append(subdir)
 
-print(f"Total unmatched subdirs: {len(unmatched_subdirs)}")
-print(unmatched_subdirs)
+# print(f"Total unmatched subdirs: {len(unmatched_subdirs)}")
+# print(unmatched_subdirs)
 
-not_found_policy = []
-for k, v in index_to_policy.items():
-    if v not in found_policy:
-        not_found_policy.append(v)
-print(f"Total not found policy: {len(not_found_policy)}")
-print(not_found_policy)
+# not_found_policy = []
+# for k, v in index_to_policy.items():
+#     if v not in found_policy:
+#         not_found_policy.append(v)
+# print(f"Total not found policy: {len(not_found_policy)}")
+# print(not_found_policy)
 
 # rename subdirs
 # for old_name, new_name in matched_subdirs.items():
@@ -68,6 +68,7 @@ print(not_found_policy)
 #             shutil.move(os.path.join(root_path, subdir, file), os.path.join(root_path, subdir, "附件", file))
 #             print(f"Moved {file} to {os.path.join(root_path, subdir, '附件', file)}")
 
+# Does not work
 def convert_to_pdf(input_file):
     """Convert DOC/DOCX to PDF using WPS via AppleScript"""
     try:
@@ -174,6 +175,7 @@ def convert_to_pdf(input_file):
         print(f"Error converting {input_file}: {str(e)}")
         return False
 
+# Works, but the table is not formatted well
 def convert_to_pdf_libreoffice(input_file):
     """Convert DOC/DOCX to PDF using LibreOffice with specific table formatting options"""
     try:
